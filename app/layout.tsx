@@ -4,6 +4,8 @@ import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import DynamicMetadata from '@/components/DynamicMetadata';
 import { Suspense } from 'react';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { WebsiteDataProvider } from '@/contexts/WebsiteDataContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,22 +24,26 @@ export default function RootLayout({
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
           </div>
         }>
-          <ThemeProvider>
-            {children}
-            <Toaster 
-              position="top-center" 
-              richColors 
-              closeButton 
-              duration={4000}
-              toastOptions={{
-                style: {
-                  background: 'white',
-                  border: '1px solid #e5e7eb',
-                  color: '#374151',
-                },
-              }}
-            />
-          </ThemeProvider>
+          <AuthProvider>
+            <WebsiteDataProvider>
+              <ThemeProvider>
+                {children}
+                <Toaster
+                  position="top-center"
+                  richColors
+                  closeButton
+                  duration={4000}
+                  toastOptions={{
+                    style: {
+                      background: 'white',
+                      border: '1px solid #e5e7eb',
+                      color: '#374151',
+                    },
+                  }}
+                />
+              </ThemeProvider>
+            </WebsiteDataProvider>
+          </AuthProvider>
         </Suspense>
       </body>
     </html>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import FloatingMenu from '@/components/layout/FloatingMenu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -128,6 +129,7 @@ export default function Join() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -153,6 +155,7 @@ export default function Join() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -312,6 +315,7 @@ export default function Join() {
       </main>
 
       <Footer />
+      <FloatingMenu />
     </div>
   );
 }

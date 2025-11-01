@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for file in \"C:\\Projects\\DynamicWebAI\\app\\services\\page.tsx\" \"C:\\Projects\\DynamicWebAI\\app\\why\\page.tsx\" \"C:\\Projects\\DynamicWebAI\\app\\contact\\page.tsx\" \"C:\\Projects\\DynamicWebAI\\app\\join\\page.tsx\")",
+      "Bash(do echo \"File: $file\")",
+      "Bash(done)",
+      "Bash(npm install framer-motion)",
+      "Bash(npm install:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

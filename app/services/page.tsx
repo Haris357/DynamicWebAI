@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import FloatingMenu from '@/components/layout/FloatingMenu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +43,7 @@ export default function Services() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -67,6 +69,7 @@ export default function Services() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -92,6 +95,7 @@ export default function Services() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -193,6 +197,7 @@ export default function Services() {
         ))}
       </main>
 
+      <FloatingMenu />
       <Footer />
     </div>
   );

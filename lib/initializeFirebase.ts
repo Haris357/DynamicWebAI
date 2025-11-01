@@ -243,7 +243,7 @@ const initializeSiteSettings = async () => {
 const initializeNavigation = async () => {
   try {
     const navItems = [
-      { label: 'Home', href: '/', order: 1 },
+      { label: 'Home', href: '/home', order: 1 },
       { label: 'About Us', href: '/about', order: 2 },
       { label: 'Why Body Art?', href: '/why-body-art', order: 3 },
       { label: 'Contact', href: '/contact', order: 4 },

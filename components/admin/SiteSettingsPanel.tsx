@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSiteSettings, updateSiteSettings } from '@/lib/firestore';
 import { toast } from 'sonner';
+import CloudinaryUpload from './CloudinaryUpload';
 
 export default function SiteSettingsPanel() {
   const [settings, setSettings] = useState({
@@ -131,12 +132,12 @@ export default function SiteSettingsPanel() {
           {settings.logoType === 'image' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Logo Image URL
+                Logo Image
               </label>
-              <Input
+              <CloudinaryUpload
                 value={settings.logoImageUrl || ''}
-                onChange={(e) => setSettings({ ...settings, logoImageUrl: e.target.value })}
-                placeholder="https://example.com/logo.png"
+                onChange={(url) => setSettings({ ...settings, logoImageUrl: url })}
+                folder="logos"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Recommended size: 32x32px or 64x64px for best results

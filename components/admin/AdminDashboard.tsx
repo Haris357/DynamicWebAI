@@ -5,43 +5,44 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Settings, 
-  LogOut, 
-  Database, 
-  Users, 
-  MessageSquare, 
-  FileText, 
-  Activity, 
+import {
+  Settings,
+  LogOut,
+  Database,
+  Users,
+  MessageSquare,
+  FileText,
+  Activity,
   TrendingUp,
-  Palette,
-  Layout,
   Globe,
   Mail,
   Navigation,
-  Edit3
+  Edit3,
+  Palette,
+  SplitSquareHorizontal
 } from 'lucide-react';
-import { signOut } from '@/lib/auth';
+import { clearAdminSession } from '@/lib/adminAuth';
 import SiteSettingsPanel from './SiteSettingsPanel';
 import PageContentPanel from './PageContentPanel';
 import TestimonialsPanel from './TestimonialsPanel';
 import FormSubmissionsPanel from './FormSubmissionsPanel';
 import NavigationPanel from './NavigationPanel';
-import ColorThemePanel from './ColorThemePanel';
-import DesignTemplatePanel from './DesignTemplatePanel';
-import WebsiteTemplatePanel from './WebsiteTemplatePanel';
 import EmailSettingsPanel from './EmailSettingsPanel';
 import DocumentEditor from './DocumentEditor';
+import ColorThemePanel from './ColorThemePanel';
 import { useSiteSettings, useTestimonials } from '@/hooks/useFirestore';
 import { getFormSubmissions } from '@/lib/firestore';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWebsiteData } from '@/contexts/WebsiteDataContext';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [contentTab, setContentTab] = useState('site-settings');
-  const [designTab, setDesignTab] = useState('website-template');
   const [isInitializing, setIsInitializing] = useState(false);
   const [selectedBusinessType, setSelectedBusinessType] = useState('gym');
+  const [showPreview, setShowPreview] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
   const [stats, setStats] = useState({
     totalSubmissions: 0,
     newSubmissions: 0,
@@ -51,6 +52,8 @@ export default function AdminDashboard() {
 
   const { settings } = useSiteSettings();
   const { testimonials } = useTestimonials();
+  const { user } = useAuth();
+  const { chatHistory, loadWebsiteData } = useWebsiteData();
 
   useEffect(() => {
     loadStats();
@@ -75,13 +78,9 @@ export default function AdminDashboard() {
   const handleLogout = async () => {
     toast.loading('Signing out...', { id: 'logout' });
     try {
-      const result = await signOut();
-      if (result.success) {
-        toast.success('Signed out successfully!', { id: 'logout' });
-        window.location.href = '/admin/login';
-      } else {
-        toast.error('Error signing out', { id: 'logout' });
-      }
+      clearAdminSession();
+      toast.success('Signed out successfully!', { id: 'logout' });
+      window.location.href = '/admin/login';
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Error signing out', { id: 'logout' });
@@ -90,17 +89,49 @@ export default function AdminDashboard() {
   };
 
   const handleInitializeData = async (businessType: string) => {
+    // Check if it's an AI-generated website (chatId format)
+    if (businessType.startsWith('chat-')) {
+      const chatId = businessType.replace('chat-', '');
+      if (!user) {
+        toast.error('You must be logged in to load AI-generated websites');
+        return;
+      }
+
+      setIsInitializing(true);
+      toast.loading('Loading AI-generated website...', { id: 'initialize' });
+
+      try {
+        const { activateAIGeneratedWebsite } = await import('@/lib/geminiService');
+        await activateAIGeneratedWebsite(user.uid, chatId);
+        await loadWebsiteData(chatId);
+
+        toast.success('AI-generated website activated successfully!', { id: 'initialize' });
+
+        setTimeout(() => {
+          setIframeKey(prev => prev + 1); // Refresh iframe
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        console.error('Error loading AI website:', error);
+        toast.error('Failed to load AI-generated website', { id: 'initialize' });
+      } finally {
+        setIsInitializing(false);
+      }
+      return;
+    }
+
+    // Original template initialization logic
     setIsInitializing(true);
     const businessNames = {
       gym: 'Gym/Fitness',
       parlour: 'Beauty Parlour',
       restaurant: 'Restaurant'
     };
-    
+
     toast.loading(`Initializing ${businessNames[businessType as keyof typeof businessNames]} data...`, { id: 'initialize' });
     try {
       let initializeFunction;
-      
+
       switch (businessType) {
         case 'gym':
           const gymModule = await import('@/lib/initializers/initializeGym');
@@ -117,16 +148,17 @@ export default function AdminDashboard() {
         default:
           throw new Error('Invalid business type');
       }
-      
+
       await initializeFunction();
-      
+
       toast.success(`${businessNames[businessType as keyof typeof businessNames]} data initialized successfully!`, { id: 'initialize' });
-      
+
       setTimeout(() => {
         console.log('Refreshing page to show new data...');
+        setIframeKey(prev => prev + 1); // Refresh iframe
         window.location.reload();
       }, 2000);
-      
+
     } catch (error) {
       console.error('Initialization error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -137,7 +169,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -152,22 +184,21 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                asChild
+                onClick={() => setShowPreview(!showPreview)}
               >
-                <a href="/" target="_blank" className="flex items-center">
-                  <span className="hidden sm:inline">Landing Page</span>
-                  <span className="sm:hidden">Landing</span>
-                </a>
+                <SplitSquareHorizontal className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">{showPreview ? 'Hide' : 'Show'} Preview</span>
+                <span className="sm:hidden">Preview</span>
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 asChild
               >
-                <a href="/" target="_blank" className="flex items-center">
+                <a href="/home" target="_blank" className="flex items-center">
                   <Globe className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">View Website</span>
                   <span className="sm:hidden">Website</span>
@@ -182,34 +213,37 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Admin Panel Content */}
+        <div className={`${showPreview ? 'w-1/2' : 'w-full'} overflow-y-auto transition-all duration-300`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Main Tab Navigation - Only 4 tabs */}
+          {/* Main Tab Navigation - 4 tabs */}
           <div className="bg-white rounded-lg border border-gray-200 p-1 overflow-x-auto">
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1 bg-transparent min-w-max">
-              <TabsTrigger 
-                value="overview" 
+              <TabsTrigger
+                value="overview"
                 className="flex items-center justify-center space-x-1 md:space-x-2 data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700 px-2 md:px-4 py-2 text-xs md:text-sm whitespace-nowrap"
               >
                 <Activity className="h-4 w-4" />
                 <span className="hidden sm:inline md:inline">Dashboard</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="content" 
+              <TabsTrigger
+                value="content"
                 className="flex items-center justify-center space-x-1 md:space-x-2 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 px-2 md:px-4 py-2 text-xs md:text-sm whitespace-nowrap"
               >
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline md:inline">Content</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="design" 
+              <TabsTrigger
+                value="colors"
                 className="flex items-center justify-center space-x-1 md:space-x-2 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 px-2 md:px-4 py-2 text-xs md:text-sm whitespace-nowrap"
               >
                 <Palette className="h-4 w-4" />
-                <span className="hidden sm:inline md:inline">Design</span>
+                <span className="hidden sm:inline md:inline">Colors</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="tools" 
+              <TabsTrigger
+                value="tools"
                 className="flex items-center justify-center space-x-1 md:space-x-2 data-[state=active]:bg-green-100 data-[state=active]:text-green-700 px-2 md:px-4 py-2 text-xs md:text-sm whitespace-nowrap"
               >
                 <Edit3 className="h-4 w-4" />
@@ -291,26 +325,37 @@ export default function AdminDashboard() {
                 <CardContent className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Business Type
+                      Select Website Template or AI-Generated
                     </label>
                     <Select value={selectedBusinessType} onValueChange={setSelectedBusinessType}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Templates</div>
                         <SelectItem value="gym">🏋️ Gym/Fitness Center</SelectItem>
                         <SelectItem value="parlour">💄 Beauty Parlour/Salon</SelectItem>
                         <SelectItem value="restaurant">🍽️ Restaurant/Cafe</SelectItem>
+                        {chatHistory.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 border-t mt-1 pt-2">AI Generated</div>
+                            {chatHistory.map((chat) => (
+                              <SelectItem key={chat.id} value={`chat-${chat.id}`}>
+                                ✨ {chat.prompt.substring(0, 40)}{chat.prompt.length > 40 ? '...' : ''}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <Button 
+                  <Button
                     onClick={() => handleInitializeData(selectedBusinessType)}
                     disabled={isInitializing}
                     className="w-full btn-theme-primary"
                   >
-                    {isInitializing ? 'Initializing...' : 'Initialize Data'}
+                    {isInitializing ? 'Loading...' : selectedBusinessType.startsWith('chat-') ? 'Load AI Website' : 'Initialize Template'}
                   </Button>
                   
                   <div className="text-xs text-gray-500 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
@@ -328,7 +373,7 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button 
+                  <Button
                     onClick={() => setActiveTab('content')}
                     className="w-full justify-start"
                     variant="outline"
@@ -336,15 +381,15 @@ export default function AdminDashboard() {
                     <FileText className="h-4 w-4 mr-2" />
                     Edit Website Content
                   </Button>
-                  <Button 
-                    onClick={() => setActiveTab('design')}
+                  <Button
+                    onClick={() => setActiveTab('colors')}
                     className="w-full justify-start"
                     variant="outline"
                   >
                     <Palette className="h-4 w-4 mr-2" />
-                    Change Website Design
+                    Change Website Colors
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => setActiveTab('tools')}
                     className="w-full justify-start"
                     variant="outline"
@@ -352,12 +397,12 @@ export default function AdminDashboard() {
                     <Edit3 className="h-4 w-4 mr-2" />
                     Document Editor & Tools
                   </Button>
-                  <Button 
+                  <Button
                     asChild
                     className="w-full justify-start"
                     variant="outline"
                   >
-                    <a href="/website" target="_blank">
+                    <a href="/home" target="_blank">
                       <Globe className="h-4 w-4 mr-2" />
                       View Live Website
                     </a>
@@ -483,45 +528,9 @@ export default function AdminDashboard() {
             </Tabs>
           </TabsContent>
 
-          {/* Design Management */}
-          <TabsContent value="design" className="space-y-6">
-            <Tabs value={designTab} onValueChange={setDesignTab} className="space-y-6">
-              <div className="bg-white rounded-lg border border-gray-200 p-1 overflow-x-auto">
-                <TabsList className="flex w-max min-w-full gap-1 bg-transparent">
-                  <TabsTrigger 
-                    value="website-template" 
-                    className="flex items-center space-x-1 md:space-x-2 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 px-2 md:px-4 py-2 text-xs md:text-sm whitespace-nowrap flex-shrink-0"
-                  >
-                    <Layout className="h-4 w-4" />
-                    <span>Structure</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="design-template" 
-                    className="flex items-center space-x-1 md:space-x-2 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 px-2 md:px-4 py-2 text-xs md:text-sm whitespace-nowrap flex-shrink-0"
-                  >
-                    <Palette className="h-4 w-4" />
-                    <span>Styles</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="color-theme" 
-                    className="flex items-center space-x-1 md:space-x-2 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 px-2 md:px-4 py-2 text-xs md:text-sm whitespace-nowrap flex-shrink-0"
-                  >
-                    <Palette className="h-4 w-4" />
-                    <span>Colors</span>
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent value="website-template">
-                <WebsiteTemplatePanel />
-              </TabsContent>
-              <TabsContent value="design-template">
-                <DesignTemplatePanel />
-              </TabsContent>
-              <TabsContent value="color-theme">
-                <ColorThemePanel />
-              </TabsContent>
-            </Tabs>
+          {/* Colors */}
+          <TabsContent value="colors" className="space-y-6">
+            <ColorThemePanel />
           </TabsContent>
 
           {/* Tools & Document Editor */}
@@ -529,6 +538,36 @@ export default function AdminDashboard() {
             <DocumentEditor />
           </TabsContent>
         </Tabs>
+          </div>
+        </div>
+
+        {/* Website Preview Iframe */}
+        {showPreview && (
+          <div className="w-1/2 border-l border-gray-200 bg-white flex flex-col">
+            <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Globe className="h-5 w-5 text-gray-600" />
+                <span className="font-semibold text-gray-900">Website Preview</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIframeKey(prev => prev + 1)}
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                key={iframeKey}
+                src="/home"
+                className="w-full h-full border-0"
+                title="Website Preview"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

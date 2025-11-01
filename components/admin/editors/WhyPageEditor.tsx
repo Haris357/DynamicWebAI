@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2, MoveUp, MoveDown } from 'lucide-react';
 import { getPageSections, addSection, updateSection, deleteSection } from '@/lib/firestore';
 import { toast } from 'sonner';
+import CloudinaryUpload from '../CloudinaryUpload';
 
 export default function WhyPageEditor() {
   const [sections, setSections] = useState([]);
@@ -273,14 +274,15 @@ export default function WhyPageEditor() {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Image URL
+                        Section Image
                       </label>
-                      <Input
+                      <CloudinaryUpload
                         value={formData.image}
-                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                        onChange={(url) => setFormData({ ...formData, image: url })}
+                        folder="why-sections"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Image Position

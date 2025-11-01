@@ -173,7 +173,7 @@ export const initializeParlourData = async () => {
 
     // Navigation
     const navItems = [
-      { label: 'Home', href: '/', order: 0 },
+      { label: 'Home', href: '/home', order: 0 },
       { label: 'About Us', href: '/about', order: 1 },
       { label: 'Services', href: '/services', order: 2 },
       { label: 'Treatments', href: '/why', order: 3 },

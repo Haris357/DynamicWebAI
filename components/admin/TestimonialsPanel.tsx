@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { getTestimonials, addTestimonial, updateTestimonial, deleteTestimonial } from '@/lib/firestore';
 import { toast } from 'sonner';
+import CloudinaryUpload from './CloudinaryUpload';
 
 export default function TestimonialsPanel() {
   const [testimonials, setTestimonials] = useState([]);
@@ -133,11 +134,12 @@ export default function TestimonialsPanel() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image URL
+                    Profile Image
                   </label>
-                  <Input
+                  <CloudinaryUpload
                     value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    onChange={(url) => setFormData({ ...formData, image: url })}
+                    folder="testimonials"
                   />
                 </div>
 

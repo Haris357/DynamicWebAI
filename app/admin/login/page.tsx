@@ -1,74 +1,75 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Eye, EyeOff, Lock, Mail, Shield } from 'lucide-react';
-import { signIn } from '@/lib/auth';
-import { useAuth } from '@/hooks/useAuth';
-import FirebaseSetup from '@/components/FirebaseSetup';
+import { Settings, Eye, EyeOff, Lock, Mail, Shield, Copy, Check } from 'lucide-react';
+import { verifyAdminCredentials, setAdminSession, isAdminLoggedIn, getAdminCredentials } from '@/lib/adminAuth';
 import { toast } from 'sonner';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('admin@bodyartfitness.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showSetup, setShowSetup] = useState(false);
-  const [selectedCredentials, setSelectedCredentials] = useState('dynamic');
+  const [adminCreds, setAdminCreds] = useState<any>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const router = useRouter();
-  const { user } = useAuth();
 
-  const credentialOptions = [
-    { id: 'dynamic', email: 'dynamicdev@admin.com', password: 'a1234567', label: 'Dynamic Website Builder' }
-  ];
+  // Load admin credentials on mount
+  useEffect(() => {
+    loadCredentials();
 
-  const handleCredentialChange = (credentialId: string) => {
-    const credential = credentialOptions.find(c => c.id === credentialId);
-    if (credential) {
-      setSelectedCredentials(credentialId);
-      setEmail(credential.email);
-      setPassword(credential.password);
+    // Check if already logged in
+    if (isAdminLoggedIn()) {
+      router.push('/admin');
+    }
+  }, [router]);
+
+  const loadCredentials = async () => {
+    const creds = await getAdminCredentials();
+    if (creds) {
+      setAdminCreds(creds);
+      // Pre-fill with the generated credentials
+      setEmail(creds.email);
+      setPassword(creds.password);
     }
   };
 
-  // Redirect if already logged in
-  if (user) {
-    router.push('/admin');
-    return null;
-  }
+  const handleCopy = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    toast.success('Copied to clipboard!');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    toast.loading('Signing in...', { id: 'admin-login' });
+    toast.loading('Verifying credentials...', { id: 'admin-login' });
 
-    const result = await signIn(email, password);
-    
-    if (result.success) {
-      toast.success('Login successful! Redirecting...', { id: 'admin-login' });
-      router.push('/admin');
-    } else {
-      const errorMessage = result.error || 'Login failed';
-      setError(errorMessage);
-      toast.error(errorMessage, { id: 'admin-login' });
-      
-      // Show setup guide if Firebase is not configured
-      if (errorMessage.includes('Firebase not configured') || errorMessage.includes('auth/invalid-api-key')) {
-        setShowSetup(true);
+    try {
+      const isValid = await verifyAdminCredentials(email, password);
+
+      if (isValid) {
+        setAdminSession(email);
+        toast.success('Login successful! Redirecting...', { id: 'admin-login' });
+        router.push('/admin');
+      } else {
+        setError('Invalid email or password. Please check the credentials below.');
+        toast.error('Invalid credentials', { id: 'admin-login' });
       }
+    } catch (error) {
+      setError('An error occurred. Please try again.');
+      toast.error('Login failed', { id: 'admin-login' });
     }
-    
+
     setIsLoading(false);
   };
-
-  if (showSetup) {
-    return <FirebaseSetup />;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -93,33 +94,10 @@ export default function AdminLogin() {
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="text-center">
             <CardTitle className="text-xl font-semibold text-gray-800">Sign In</CardTitle>
-            <p className="text-sm text-gray-600">Enter your credentials to continue</p>
+            <p className="text-sm text-gray-600">Use your AI-generated credentials</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quick Login
-                </label>
-                <div className="grid grid-cols-1 gap-2">
-                  {credentialOptions.map((credential) => (
-                    <button
-                      key={credential.id}
-                      type="button"
-                      onClick={() => handleCredentialChange(credential.id)}
-                      className={`p-3 text-left border rounded-lg transition-all ${
-                        selectedCredentials === credential.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="font-medium text-gray-900">{credential.label}</div>
-                      <div className="text-sm text-gray-500">{credential.email}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
@@ -138,7 +116,7 @@ export default function AdminLogin() {
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Password
@@ -184,8 +162,8 @@ export default function AdminLogin() {
                 </div>
               )}
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading}
                 className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none"
               >
@@ -199,39 +177,67 @@ export default function AdminLogin() {
                 )}
               </Button>
             </form>
-            
-            {error && (
-              <div className="mt-4">
-                <Button 
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowSetup(true)}
-                  className="w-full border-orange-200 text-orange-600 hover:bg-orange-50"
-                >
-                  Need Help? Setup Firebase
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        {/* Default Credentials Info */}
-        <div className="mt-6 bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            Default Admin Credentials
-          </h3>
-          <div className="space-y-2 text-xs text-gray-600">
-            <div className="flex justify-between">
-              <span>Dynamic Builder:</span>
-              <code className="bg-gray-100 px-2 py-1 rounded">dynamicdev@admin.com</code>
-            </div>
-            <div className="flex justify-between">
-              <span>Password:</span>
-              <code className="bg-gray-100 px-2 py-1 rounded">a1234567</code>
+        {/* AI-Generated Credentials Info */}
+        {adminCreds && (
+          <div className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 backdrop-blur-sm rounded-lg p-5 border-2 border-green-200 shadow-lg">
+            <h3 className="text-sm font-bold text-green-800 mb-3 flex items-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+              🤖 AI-Generated Admin Credentials
+            </h3>
+            <div className="space-y-3">
+              <div className="bg-white/60 rounded-lg p-3">
+                <div className="text-xs font-semibold text-gray-600 mb-1">Email</div>
+                <div className="flex items-center justify-between">
+                  <code className="text-sm font-mono text-gray-900 break-all">{adminCreds.email}</code>
+                  <button
+                    onClick={() => handleCopy(adminCreds.email, 'email')}
+                    className="ml-2 p-1.5 hover:bg-gray-200 rounded transition-colors flex-shrink-0"
+                  >
+                    {copiedField === 'email' ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white/60 rounded-lg p-3">
+                <div className="text-xs font-semibold text-gray-600 mb-1">Password</div>
+                <div className="flex items-center justify-between">
+                  <code className="text-sm font-mono text-gray-900">{adminCreds.password}</code>
+                  <button
+                    onClick={() => handleCopy(adminCreds.password, 'password')}
+                    className="ml-2 p-1.5 hover:bg-gray-200 rounded transition-colors flex-shrink-0"
+                  >
+                    {copiedField === 'password' ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <p className="text-xs text-blue-800">
+                  💡 <strong>Tip:</strong> These credentials were auto-generated by AI when your website was created. Keep them safe!
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {!adminCreds && (
+          <div className="mt-6 bg-yellow-50 backdrop-blur-sm rounded-lg p-4 border border-yellow-200">
+            <p className="text-sm text-yellow-800">
+              ⚠️ No admin credentials found. Please generate a website first using the AI chat.
+            </p>
+          </div>
+        )}
 
         {/* Features List */}
         <div className="mt-4 text-center">

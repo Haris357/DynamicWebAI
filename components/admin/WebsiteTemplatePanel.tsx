@@ -1,250 +1,219 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Layout, Check, Monitor, Smartphone, Tablet, Stars, Zap, Award } from 'lucide-react';
-import { getSiteSettings, updateSiteSettings } from '@/lib/firestore';
+import { Card, CardContent } from '@/components/ui/card';
+import { Check, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTemplate } from '@/contexts/TemplateContext';
 
-interface WebsiteTemplate {
-  id: string;
-  name: string;
-  description: string;
-  preview: string;
-  features: string[];
-  structure: {
-    navigation: string;
-    hero: string;
-    layout: string;
-  };
-}
-
-const websiteTemplates: WebsiteTemplate[] = [
+const websiteTemplates = [
   {
-    id: 'modern-business',
-    name: 'Modern Business',
-    description: 'Professional layout perfect for most businesses',
-    preview: 'Standard navigation, full-width hero, grid layouts',
-    features: ['Standard header', 'Full-width sections', 'Grid layouts', 'Professional styling'],
-    structure: {
-      navigation: 'standard',
-      hero: 'fullscreen',
-      layout: 'standard'
-    }
+    id: 'classic',
+    name: 'Classic',
+    description: 'Traditional layout with full-width hero and standard sections',
+    preview: 'bg-gradient-to-br from-orange-500 to-red-600',
+    features: ['Full-width hero', 'Fixed parallax', 'Standard sections', 'Classic animations']
   },
   {
-    id: 'creative-portfolio',
-    name: 'Creative Portfolio',
-    description: 'Artistic layout with split-screen design',
-    preview: 'Split hero sections, masonry grids, creative layouts',
-    features: ['Split-screen hero', 'Masonry layouts', 'Creative grids', 'Artistic styling'],
-    structure: {
-      navigation: 'overlay',
-      hero: 'split',
-      layout: 'masonry'
-    }
+    id: 'modern',
+    name: 'Modern Minimal',
+    description: 'Clean, minimalist design with split-screen layout and subtle animations',
+    preview: 'bg-gradient-to-br from-gray-100 to-gray-300',
+    features: ['Split-screen layout', 'Minimalist design', 'Subtle animations', 'Feature cards']
   },
   {
-    id: 'minimal-zen',
-    name: 'Minimal Zen',
-    description: 'Clean, minimal design with lots of white space',
-    preview: 'Minimal navigation, clean typography, white space',
-    features: ['Minimal header', 'Clean typography', 'White space', 'Zen aesthetics'],
-    structure: {
-      navigation: 'minimal',
-      hero: 'minimal',
-      layout: 'minimal'
-    }
+    id: 'bold',
+    name: 'Bold & Dynamic',
+    description: 'Vibrant gradients, bold typography, and energetic animations',
+    preview: 'bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700',
+    features: ['Gradient backgrounds', 'Bold typography', 'Animated elements', 'Floating effects']
   },
   {
-    id: 'dynamic-interactive',
-    name: 'Dynamic Interactive',
-    description: 'Interactive elements with sidebar navigation',
-    preview: 'Sidebar navigation, interactive sections, dynamic content',
-    features: ['Sidebar navigation', 'Interactive elements', 'Dynamic sections', 'Modern UX'],
-    structure: {
-      navigation: 'sidebar',
-      hero: 'interactive',
-      layout: 'dynamic'
-    }
-  },
-  {
-    id: 'magazine-editorial',
-    name: 'Magazine Editorial',
-    description: 'Editorial-style layout with bold typography',
-    preview: 'Bold typography, magazine layouts, editorial styling',
-    features: ['Bold typography', 'Magazine grids', 'Editorial style', 'Content focus'],
-    structure: {
-      navigation: 'overlay',
-      hero: 'editorial',
-      layout: 'magazine'
-    }
+    id: 'elegant',
+    name: 'Elegant Luxury',
+    description: 'Sophisticated dark theme with gold accents and smooth transitions',
+    preview: 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900',
+    features: ['Dark luxury theme', 'Gold accents', 'Smooth transitions', 'Serif typography']
   }
 ];
 
 export default function WebsiteTemplatePanel() {
-  const [selectedTemplate, setSelectedTemplate] = useState('modern-business');
-  const [isLoading, setIsLoading] = useState(false);
+  const { currentTemplate, setTemplate, loading } = useTemplate();
+  const [applying, setApplying] = useState(false);
 
-  useEffect(() => {
-    loadCurrentTemplate();
-  }, []);
+  const handleApplyTemplate = async (templateId: string) => {
+    setApplying(true);
+    toast.loading('Applying template...', { id: 'template' });
 
-  const loadCurrentTemplate = async () => {
     try {
-      const settings = await getSiteSettings();
-      if (settings?.websiteTemplate) {
-        setSelectedTemplate(settings.websiteTemplate);
-      }
+      console.log('Applying template:', templateId);
+      await setTemplate(templateId);
+      console.log('Template set successfully, reloading page...');
+      toast.success('Template applied successfully! Reloading...', { id: 'template' });
+
+      // Reload the page to apply template changes
+      setTimeout(() => {
+        window.location.href = window.location.href;
+      }, 1000);
     } catch (error) {
-      console.error('Error loading website template:', error);
+      console.error('Error applying template:', error);
+      toast.error('Failed to apply template: ' + (error as Error).message, { id: 'template' });
+      setApplying(false);
     }
   };
 
-  const handleTemplateChange = async (templateId: string) => {
-    setSelectedTemplate(templateId);
-    
-    setIsLoading(true);
-    toast.loading('Applying website template...', { id: 'website-template' });
-    
-    try {
-      // Get current settings
-      const currentSettings = await getSiteSettings() || {};
-      
-      // Update with new template
-      await updateSiteSettings({
-        ...currentSettings,
-        websiteTemplate: templateId
-      });
-      
-      // Apply template class to document
-      document.documentElement.className = document.documentElement.className
-        .replace(/website-template-[\w-]+/g, '')
-        .trim();
-      document.documentElement.classList.add(`website-template-${templateId}`);
-      
-      toast.success('Website template applied successfully!', { id: 'website-template' });
-    } catch (error) {
-      console.error('Error saving website template:', error);
-      toast.error('Error applying website template', { id: 'website-template' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getTemplateIcon = (templateId: string) => {
-    const icons = {
-      'modern-business': <Monitor className="h-5 w-5" />,
-      'creative-portfolio': <Stars className="h-5 w-5" />,
-      'minimal-zen': <Stars className="h-5 w-5" />,
-      'dynamic-interactive': <Zap className="h-5 w-5" />,
-      'magazine-editorial': <Award className="h-5 w-5" />
-    };
-    return icons[templateId as keyof typeof icons] || <Layout className="h-5 w-5" />;
-  };
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading templates...</p>
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Layout className="h-5 w-5" />
-          <span>Website Structure Templates</span>
-        </CardTitle>
-        <p className="text-sm text-gray-600">
-          Choose a website structure that affects the overall layout, navigation style, and content organization.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 gap-4">
-          {websiteTemplates.map((template) => (
-            <div 
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Website Design Templates
+            </h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Transform your entire website with professionally designed templates. Each template includes
+              unique layouts, animations, and styles that completely change the look and feel of your website.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {websiteTemplates.map((template) => {
+          const isActive = currentTemplate === template.id;
+
+          return (
+            <Card
               key={template.id}
-              className={`relative p-6 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
-                selectedTemplate === template.id 
-                  ? 'border-blue-500 bg-blue-50 shadow-lg' 
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+              className={`group cursor-pointer transition-all duration-300 hover:shadow-xl ${
+                isActive
+                  ? 'ring-2 ring-purple-600 shadow-lg'
+                  : 'hover:ring-2 hover:ring-gray-300'
               }`}
-              onClick={() => handleTemplateChange(template.id)}
             >
-              {selectedTemplate === template.id && (
-                <div className="absolute top-3 right-3 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Check className="h-4 w-4 text-white" />
+              <CardContent className="p-0">
+                {/* Template Preview */}
+                <div className="relative h-48 overflow-hidden rounded-t-lg">
+                  <div className={`absolute inset-0 ${template.preview} transition-transform duration-500 group-hover:scale-110`}>
+                    {/* Preview Content */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        {template.id === 'modern' && (
+                          <div className="space-y-2">
+                            <div className="h-2 w-32 bg-white/30 rounded mx-auto" />
+                            <div className="h-4 w-48 bg-white/50 rounded mx-auto" />
+                            <div className="h-2 w-40 bg-white/30 rounded mx-auto" />
+                          </div>
+                        )}
+                        {template.id === 'bold' && (
+                          <div className="space-y-3">
+                            <div className="h-6 w-48 bg-white/80 rounded-lg mx-auto" />
+                            <div className="flex justify-center gap-2">
+                              <div className="h-8 w-24 bg-white/60 rounded-lg" />
+                              <div className="h-8 w-24 bg-white/40 rounded-lg" />
+                            </div>
+                          </div>
+                        )}
+                        {template.id === 'elegant' && (
+                          <div className="space-y-2">
+                            <div className="h-px w-32 bg-gradient-to-r from-transparent via-yellow-400 to-transparent mx-auto" />
+                            <div className="h-3 w-40 bg-yellow-400/30 rounded mx-auto" />
+                            <div className="h-px w-32 bg-gradient-to-r from-transparent via-yellow-400 to-transparent mx-auto" />
+                          </div>
+                        )}
+                        {template.id === 'classic' && (
+                          <div className="space-y-3">
+                            <div className="h-4 w-48 bg-white/60 rounded mx-auto" />
+                            <div className="h-3 w-36 bg-white/40 rounded mx-auto" />
+                            <div className="flex justify-center gap-2 mt-4">
+                              <div className="h-6 w-20 bg-white/50 rounded-full" />
+                              <div className="h-6 w-20 bg-white/30 rounded-full" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Badge */}
+                  {isActive && (
+                    <div className="absolute top-4 right-4 bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+                      <Check className="h-3 w-3" />
+                      <span>Active</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white flex-shrink-0">
-                  {getTemplateIcon(template.id)}
-                </div>
-                
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-2">{template.name}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{template.description}</p>
-                  <p className="text-sm text-gray-700 mb-4 italic">{template.preview}</p>
-                  
-                  <div className="flex flex-wrap gap-2">
+
+                {/* Template Info */}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    {template.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    {template.description}
+                  </p>
+
+                  {/* Features */}
+                  <div className="space-y-2 mb-6">
                     {template.features.map((feature, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                      <div key={index} className="flex items-center text-sm text-gray-600">
+                        <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mr-2" />
                         {feature}
-                      </Badge>
+                      </div>
                     ))}
                   </div>
+
+                  {/* Apply Button */}
+                  <Button
+                    onClick={() => handleApplyTemplate(template.id)}
+                    disabled={isActive || applying}
+                    className={`w-full ${
+                      isActive
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                    }`}
+                  >
+                    {isActive ? 'Currently Active' : 'Apply Template'}
+                  </Button>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-semibold text-blue-900 mb-2">Template Structure Effects:</h4>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Navigation bar style and positioning</li>
-            <li>• Hero section layout and structure</li>
-            <li>• Content section organization</li>
-            <li>• Grid and layout patterns</li>
-            <li>• Overall page flow and hierarchy</li>
-            <li>• Responsive behavior patterns</li>
-          </ul>
-        </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h4 className="font-semibold text-green-900 mb-2">Current Template:</h4>
-          <div className="flex items-center space-x-3">
-            <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded flex items-center justify-center text-white">
-              {getTemplateIcon(selectedTemplate)}
-            </div>
-            <span className="text-green-800 font-medium">
-              {websiteTemplates.find(t => t.id === selectedTemplate)?.name || 'Modern Business'}
-            </span>
-            <Badge variant="outline" className="text-green-700 border-green-300">
-              Active
-            </Badge>
-          </div>
-        </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h4 className="font-semibold text-yellow-900 mb-2">Responsive Design:</h4>
-          <div className="flex items-center space-x-6 text-sm text-yellow-800">
-            <div className="flex items-center space-x-2">
-              <Monitor className="h-4 w-4" />
-              <span>Desktop</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Tablet className="h-4 w-4" />
-              <span>Tablet</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Smartphone className="h-4 w-4" />
-              <span>Mobile</span>
+      {/* Tips */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm font-bold">💡</span>
             </div>
           </div>
-          <p className="text-sm text-yellow-800 mt-2">
-            All templates are fully responsive and optimized for all devices.
-          </p>
+          <div className="flex-1">
+            <h4 className="font-semibold text-gray-900 mb-1">Pro Tip</h4>
+            <p className="text-sm text-gray-600">
+              Each template is fully responsive and optimized for all devices. Your content stays the same,
+              only the design and animations change. Try different templates to find the perfect look for your brand!
+            </p>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

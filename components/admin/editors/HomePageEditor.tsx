@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getPageContent, updatePageContent } from '@/lib/firestore';
 import { toast } from 'sonner';
+import CloudinaryUpload from '../CloudinaryUpload';
 
 export default function HomePageEditor() {
   const [heroData, setHeroData] = useState({
@@ -225,11 +226,12 @@ export default function HomePageEditor() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Background Image URL
+                Background Image
               </label>
-              <Input
+              <CloudinaryUpload
                 value={heroData.backgroundImage}
-                onChange={(e) => setHeroData({ ...heroData, backgroundImage: e.target.value })}
+                onChange={(url) => setHeroData({ ...heroData, backgroundImage: url })}
+                folder="hero-backgrounds"
               />
             </div>
 
@@ -309,11 +311,12 @@ export default function HomePageEditor() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Section Image URL
+                Section Image
               </label>
-              <Input
+              <CloudinaryUpload
                 value={introData.image}
-                onChange={(e) => setIntroData({ ...introData, image: e.target.value })}
+                onChange={(url) => setIntroData({ ...introData, image: url })}
+                folder="intro-images"
               />
             </div>
           </CardContent>
@@ -381,17 +384,18 @@ export default function HomePageEditor() {
                       />
                     </div>
                     
-                    <div>
+                    <div className="col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Service Image URL
+                        Service Image
                       </label>
-                      <Input
+                      <CloudinaryUpload
                         value={service.image}
-                        onChange={(e) => {
+                        onChange={(url) => {
                           const updated = [...servicesData.services];
-                          updated[index] = { ...updated[index], image: e.target.value };
+                          updated[index] = { ...updated[index], image: url };
                           setServicesData({ ...servicesData, services: updated });
                         }}
+                        folder="services"
                       />
                     </div>
                   </div>
@@ -525,17 +529,18 @@ export default function HomePageEditor() {
                       />
                     </div>
                     
-                    <div>
+                    <div className="col-span-3">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Feature Image URL
+                        Feature Image
                       </label>
-                      <Input
+                      <CloudinaryUpload
                         value={feature.image}
-                        onChange={(e) => {
+                        onChange={(url) => {
                           const updated = [...featuresData.features];
-                          updated[index] = { ...updated[index], image: e.target.value };
+                          updated[index] = { ...updated[index], image: url };
                           setFeaturesData({ ...featuresData, features: updated });
                         }}
+                        folder="features"
                       />
                     </div>
                   </div>
@@ -596,11 +601,12 @@ export default function HomePageEditor() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Background Image URL
+                Background Image
               </label>
-              <Input
+              <CloudinaryUpload
                 value={statsData.backgroundImage}
-                onChange={(e) => setStatsData({ ...statsData, backgroundImage: e.target.value })}
+                onChange={(url) => setStatsData({ ...statsData, backgroundImage: url })}
+                folder="stats-backgrounds"
               />
             </div>
 
@@ -730,11 +736,12 @@ export default function HomePageEditor() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Background Image URL
+                Background Image
               </label>
-              <Input
+              <CloudinaryUpload
                 value={ctaData.backgroundImage}
-                onChange={(e) => setCtaData({ ...ctaData, backgroundImage: e.target.value })}
+                onChange={(url) => setCtaData({ ...ctaData, backgroundImage: url })}
+                folder="cta-backgrounds"
               />
             </div>
 

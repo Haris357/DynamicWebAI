@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
 import { getPageContent, updatePageContent } from '@/lib/firestore';
 import { toast } from 'sonner';
+import CloudinaryUpload from '../CloudinaryUpload';
 
 export default function JoinPageEditor() {
   const [heroData, setHeroData] = useState({
@@ -202,12 +203,12 @@ export default function JoinPageEditor() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Background Image URL
+                Background Image
               </label>
-              <Input
+              <CloudinaryUpload
                 value={heroData.backgroundImage}
-                onChange={(e) => setHeroData({ ...heroData, backgroundImage: e.target.value })}
-                placeholder="https://images.pexels.com/..."
+                onChange={(url) => setHeroData({ ...heroData, backgroundImage: url })}
+                folder="join-hero"
               />
             </div>
 

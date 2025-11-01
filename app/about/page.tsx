@@ -2,6 +2,7 @@
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import FloatingMenu from '@/components/layout/FloatingMenu';
 import DynamicSection from '@/components/sections/DynamicSection';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePageContent } from '@/hooks/useFirestore';
@@ -39,6 +40,7 @@ export default function About() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -55,8 +57,8 @@ export default function About() {
               <p className="text-gray-600 mb-6">
                 There was an error loading the about page content.
               </p>
-              <a 
-                href="/admin" 
+              <a
+                href="/admin"
                 className="btn-theme-primary px-6 py-3 rounded-lg transition-colors"
               >
                 Go to Admin Panel
@@ -65,6 +67,7 @@ export default function About() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -81,8 +84,8 @@ export default function About() {
               <p className="text-gray-600 mb-6">
                 Please initialize the default data from the admin panel to see the about page content.
               </p>
-              <a 
-                href="/admin" 
+              <a
+                href="/admin"
                 className="btn-theme-primary px-6 py-3 rounded-lg transition-colors"
               >
                 Go to Admin Panel
@@ -91,6 +94,7 @@ export default function About() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -98,7 +102,7 @@ export default function About() {
   return (
     <div className="min-h-screen">
       <Header />
-      
+
       <main className="pt-16">
         {sections && sections.length > 0 && sections.map((section: any) => (
           <DynamicSection key={section.id} section={section} />
@@ -106,6 +110,7 @@ export default function About() {
       </main>
 
       <Footer />
+      <FloatingMenu />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import FloatingMenu from '@/components/layout/FloatingMenu';
 import DynamicSection from '@/components/sections/DynamicSection';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePageContent } from '@/hooks/useFirestore';
@@ -31,6 +32,7 @@ export default function Why() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -56,6 +58,7 @@ export default function Why() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -81,6 +84,7 @@ export default function Why() {
           </div>
         </main>
         <Footer />
+        <FloatingMenu />
       </div>
     );
   }
@@ -96,6 +100,7 @@ export default function Why() {
       </main>
 
       <Footer />
+      <FloatingMenu />
     </div>
   );
 }

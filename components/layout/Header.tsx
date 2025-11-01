@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, Dumbbell, UtensilsCrossed, Heart, Star, Crown, Zap, Award, Stars } from 'lucide-react';
+import {
+  Menu, X, Dumbbell, UtensilsCrossed, Heart, Star, Crown, Zap, Award, Stars,
+  Coffee, Store, Scissors, ShoppingBag, Laptop, Briefcase, Home, Building,
+  Flame, Users, Shield, CheckCircle, Gift, Music, Camera, Palette, Cpu,
+  Globe, Mail, Phone, MapPin, Sparkles
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigation, useSiteSettings } from '@/hooks/useFirestore';
 import { useTheme } from '@/components/ThemeProvider';
@@ -21,17 +26,39 @@ export default function Header() {
 
   const getLogoIcon = (iconName: string) => {
     const iconMap = {
-      Dumbbell: Dumbbell,
-      Sparkles: Stars,
-      UtensilsCrossed: UtensilsCrossed,
-      Heart: Heart,
-      Star: Star,
-      Crown: Crown,
-      Zap: Zap,
-      Award: Award
+      Dumbbell,
+      UtensilsCrossed,
+      Sparkles,
+      Heart,
+      Coffee,
+      Store,
+      Scissors,
+      ShoppingBag,
+      Laptop,
+      Briefcase,
+      Home,
+      Building,
+      Flame,
+      Zap,
+      Star,
+      Users,
+      Award,
+      Shield,
+      CheckCircle,
+      Gift,
+      Crown,
+      Music,
+      Camera,
+      Palette,
+      Cpu,
+      Globe,
+      Mail,
+      Phone,
+      MapPin,
+      Stars
     };
-    const IconComponent = iconMap[iconName as keyof typeof iconMap] || Dumbbell;
-    return <IconComponent className="h-6 w-6 text-white" />;
+    const IconComponent = iconMap[iconName as keyof typeof iconMap] || Sparkles;
+    return <IconComponent className="h-full w-full text-white" />;
   };
 
   // Show loading state while settings are being fetched
@@ -52,22 +79,24 @@ export default function Header() {
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 gap-2">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className={`p-2 rounded-lg ${settings?.logoType === 'image' && settings?.logoImageUrl ? '' : 'theme-bg-gradient'}`}>
+          <Link href="/" className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink min-w-0 max-w-[60%] sm:max-w-none">
+            <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${settings?.logoType === 'image' && settings?.logoImageUrl ? '' : 'theme-bg-gradient'}`}>
               {settings?.logoType === 'image' && settings?.logoImageUrl ? (
-                <img 
-                  src={settings.logoImageUrl} 
-                  alt="Logo" 
-                  className="h-6 w-6 object-contain"
+                <img
+                  src={settings.logoImageUrl}
+                  alt="Logo"
+                  className="h-5 w-5 sm:h-6 sm:w-6 object-contain"
                 />
               ) : (
-                getLogoIcon(settings?.logoIcon || 'Dumbbell')
+                <div className="h-5 w-5 sm:h-6 sm:w-6">
+                  {getLogoIcon(settings?.logoIcon || 'Dumbbell')}
+                </div>
               )}
             </div>
-            <span className="text-xl font-bold text-gray-900">
+            <span className="text-sm sm:text-lg md:text-xl font-bold text-gray-900 truncate">
               {settings?.siteName || 'Loading...'}
             </span>
           </Link>

@@ -172,7 +172,7 @@ export const initializeGymData = async () => {
 
     // Navigation
     const navItems = [
-      { label: 'Home', href: '/', order: 0 },
+      { label: 'Home', href: '/home', order: 0 },
       { label: 'About Us', href: '/about', order: 1 },
       { label: 'Services', href: '/services', order: 2 },
       { label: 'Why Body Art?', href: '/why', order: 3 },

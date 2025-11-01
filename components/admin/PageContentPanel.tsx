@@ -19,6 +19,7 @@ export default function PageContentPanel() {
   const getPageEditor = (href: string) => {
     switch (href) {
       case '/':
+      case '/home':
         return { component: <HomePageEditor />, id: 'home', label: 'Home Page' };
       case '/about':
         return { component: <AboutPageEditor />, id: 'about', label: 'About Page' };

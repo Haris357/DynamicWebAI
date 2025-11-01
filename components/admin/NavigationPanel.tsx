@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 export default function NavigationPanel() {
   const [navItems, setNavItems] = useState([
-    { label: 'Home', href: '/', visible: true },
+    { label: 'Home', href: '/home', visible: true },
     { label: 'About Us', href: '/about', visible: true },
     { label: 'Services', href: '/services', visible: true },
     { label: 'Why Us?', href: '/why', visible: true },
