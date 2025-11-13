@@ -28,7 +28,7 @@ export async function generateWebsiteWithAI(
   userId: string,
   chatId: string
 ): Promise<GeneratedWebsiteData> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
   // Create a comprehensive prompt that instructs the AI to generate complete website data
   const systemPrompt = `You are an expert website content generator. Based on the user's business description, generate a complete, professional website data structure in JSON format.
