@@ -2,18 +2,30 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles, Wand2, LogOut, Loader2, CheckCircle, ArrowRight, MessageSquare, Plus, Menu, X } from 'lucide-react';
+import {
+  Sparkles,
+  Wand2,
+  LogOut,
+  Loader2,
+  CheckCircle,
+  MessageSquare,
+  Plus,
+  Menu,
+  X,
+  Shapes,
+  Zap,
+  Clock,
+  Send
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signOut as firebaseSignOut } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { signOut as firebaseSignOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebsiteData } from '@/contexts/WebsiteDataContext';
 import { generateWebsiteWithAI, saveChatMessage, activateAIGeneratedWebsite } from '@/lib/geminiService';
 import WebsiteBuildingAnimation from '@/components/chat/WebsiteBuildingAnimation';
+import { cn } from '@/lib/utils';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -22,13 +34,15 @@ export default function ChatPage() {
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const auth = getAuth(app);
 
   const handleSignOut = async () => {
+    if (!auth) {
+      toast.error('Authentication not available');
+      return;
+    }
     try {
       await firebaseSignOut(auth);
       toast.success('Signed out successfully');
-      // Navigate to landing page
       window.location.href = '/';
     } catch (error) {
       console.error('Sign out error:', error);
@@ -50,27 +64,15 @@ export default function ChatPage() {
     setGenerating(true);
 
     try {
-      // Generate unique chat ID
       const chatId = Date.now().toString();
-
-      // Generate website with AI
       const websiteData = await generateWebsiteWithAI(prompt, user.uid, chatId);
-
-      // Save chat message
       await saveChatMessage(user.uid, chatId, prompt, websiteData);
-
-      // Activate the AI-generated website (copy to standard Firestore location)
       await activateAIGeneratedWebsite(user.uid, chatId);
-
-      // Reload chat history
       await loadChatHistory();
-
-      // Load the generated website data into context
       await loadWebsiteData(chatId);
 
       toast.success('Website generated successfully! Redirecting...');
 
-      // Small delay to show success before redirect
       setTimeout(() => {
         router.push('/home');
       }, 1000);
@@ -88,15 +90,9 @@ export default function ChatPage() {
     const toastId = toast.loading('Loading your website...');
 
     try {
-      // Activate the AI-generated website (copy to standard Firestore location)
       await activateAIGeneratedWebsite(user.uid, chatId);
-
-      // Load into context
       await loadWebsiteData(chatId);
-
       toast.success('Website loaded successfully!', { id: toastId });
-
-      // Navigate to home
       router.push('/home');
     } catch (error) {
       console.error('Error loading chat:', error);
@@ -106,13 +102,15 @@ export default function ChatPage() {
 
   const handleNewChat = () => {
     setPrompt('');
-    setSidebarOpen(true);
   };
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-white animate-spin" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+          <p className="text-sm text-zinc-500">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -127,262 +125,256 @@ export default function ChatPage() {
       {/* Website Building Animation Overlay */}
       {generating && <WebsiteBuildingAnimation />}
 
-      <div className="min-h-screen bg-black text-white overflow-hidden flex">
-        {/* Animated Background Grid */}
-        <div className="fixed inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+      <div className="h-screen bg-white text-zinc-950 selection:bg-orange-100 selection:text-orange-900 font-sans overflow-hidden flex">
+        {/* --- Ambient Background --- */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+          <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-gradient-to-br from-orange-100/20 to-pink-100/20 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-purple-100/20 to-blue-100/20 rounded-full blur-[120px]" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02]" />
+        </div>
 
-      {/* Sidebar */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ x: -320 }}
-            animate={{ x: 0 }}
-            exit={{ x: -320 }}
-            transition={{ duration: 0.3 }}
-            className="relative z-20 w-80 bg-black/50 backdrop-blur-xl border-r border-white/10 flex flex-col"
-          >
-            <div className="p-4 border-b border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <MessageSquare className="h-5 w-5 text-purple-400" />
-                  <span className="font-semibold">Your Chats</span>
+        {/* Sidebar */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ x: -320 }}
+              animate={{ x: 0 }}
+              exit={{ x: -320 }}
+              transition={{ type: "spring", stiffness: 100, damping: 20 }}
+              className="relative z-20 w-80 bg-white border-r border-zinc-200 flex flex-col h-full"
+            >
+              {/* Sidebar Header - Fixed */}
+              <div className="flex-shrink-0 p-6 border-b border-zinc-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center shadow-md">
+                      <Shapes className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="font-bold text-lg">Builder.ai</span>
+                  </div>
+                  <button
+                    onClick={() => setSidebarOpen(false)}
+                    className="lg:hidden p-2 hover:bg-zinc-100 rounded-lg transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
                 <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  onClick={handleNewChat}
+                  className="w-full bg-black hover:bg-zinc-800 text-white font-semibold rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/10"
                 >
-                  <X className="h-5 w-5" />
+                  <Plus className="h-4 w-4" />
+                  New Website
                 </button>
               </div>
-              <Button
-                onClick={handleNewChat}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Website
-              </Button>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {chatHistory.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No chats yet</p>
-                  <p className="text-xs">Create your first website!</p>
-                </div>
-              ) : (
-                chatHistory.map((chat) => (
-                  <button
-                    key={chat.id}
-                    onClick={() => handleChatClick(chat.id)}
-                    className="w-full text-left p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-all duration-200 group"
-                  >
-                    <div className="flex items-start space-x-3">
-                      <Sparkles className="h-4 w-4 text-purple-400 flex-shrink-0 mt-1" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-300 group-hover:text-white line-clamp-2 transition-colors">
-                          {chat.prompt}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {chat.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
-                        </p>
-                      </div>
+              {/* Chat History - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {chatHistory.length === 0 ? (
+                  <div className="text-center text-zinc-400 py-12">
+                    <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="h-8 w-8 text-zinc-400" />
                     </div>
-                  </button>
-                ))
-              )}
-            </div>
+                    <p className="text-sm font-medium text-zinc-600">No websites yet</p>
+                    <p className="text-xs text-zinc-400 mt-1">Create your first AI website!</p>
+                  </div>
+                ) : (
+                  chatHistory.map((chat) => (
+                    <button
+                      key={chat.id}
+                      onClick={() => handleChatClick(chat.id)}
+                      className="w-full text-left p-4 bg-zinc-50 hover:bg-zinc-100 rounded-xl transition-all duration-200 group border border-zinc-200 hover:border-zinc-300"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <MessageSquare className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-zinc-700 group-hover:text-zinc-900 line-clamp-2 font-medium mb-1">
+                            {chat.prompt}
+                          </p>
+                          <div className="flex items-center gap-1 text-xs text-zinc-400">
+                            <Clock className="h-3 w-3" />
+                            {chat.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
 
-            <div className="p-4 border-t border-white/10">
-              <div className="text-xs text-gray-400 mb-2">{user?.email}</div>
-              <Button
-                variant="ghost"
-                className="w-full text-white hover:text-white hover:bg-white/10"
-                onClick={handleSignOut}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {/* Sidebar Footer - Fixed */}
+              <div className="flex-shrink-0 p-4 border-t border-zinc-200 bg-zinc-50">
+                <div className="flex items-center gap-3 mb-3 px-2">
+                  <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-pink-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md">
+                    {user?.email?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-zinc-900 truncate">{user?.email}</p>
+                  </div>
+                </div>
+                <button
+                  className="w-full text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200 rounded-lg py-2.5 px-4 flex items-center justify-center gap-2 transition-colors font-medium text-sm border border-zinc-200"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col relative z-10">
-        {/* Header */}
-        <motion.header
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="bg-black/50 backdrop-blur-xl border-b border-white/10"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col h-full relative z-10">
+          {/* Header - Fixed */}
+          <motion.header
+            initial={{ y: -100 }}
+            animate={{ y: 0 }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            className="flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-zinc-200"
+          >
+            <div className="px-6 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-4">
                 {!sidebarOpen && (
                   <button
                     onClick={() => setSidebarOpen(true)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"
                   >
                     <Menu className="h-5 w-5" />
                   </button>
                 )}
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="h-8 w-8 text-white" />
-                  <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                    AI WebBuilder
-                  </span>
+                <div className="flex items-center gap-2 font-bold text-lg">
+                  <Sparkles className="w-5 h-5 text-orange-500" />
+                  <span className="text-zinc-900">AI Website Builder</span>
                 </div>
               </div>
             </div>
-          </div>
-        </motion.header>
+          </motion.header>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto pt-12 pb-20 px-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Welcome Message */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-12"
-            >
-              <div className="inline-flex items-center bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-6 py-2 mb-6">
-                <Wand2 className="h-5 w-5 text-purple-400 mr-2" />
-                <span className="text-sm font-semibold">AI Website Generator</span>
-              </div>
+          {/* Chat Messages Area - Scrollable */}
+          <div className="flex-1 overflow-y-auto px-6 py-8">
+            <div className="max-w-3xl mx-auto space-y-6">
+              {/* Welcome Message */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-center mb-8"
+              >
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 text-orange-600 text-sm font-semibold mb-6 border border-orange-100">
+                  <Sparkles className="w-4 h-4 animate-pulse" />
+                  <span>Powered by AI</span>
+                </div>
 
-              <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                Describe Your Dream Website
-              </h1>
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-zinc-900 mb-4">
+                  What would you like to build today?
+                </h1>
 
-              <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                Tell our AI what kind of business website you need, and we'll generate a complete,
-                fully functional website tailored to your requirements.
-              </p>
-            </motion.div>
+                <p className="text-lg text-zinc-500 max-w-xl mx-auto">
+                  Describe your business and we'll create a production-ready website in seconds
+                </p>
+              </motion.div>
 
-            {/* Input Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-                <CardContent className="p-8">
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium mb-3 text-gray-300">
-                      Your Business Description
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 blur-xl opacity-20 rounded-2xl" />
-                      <Textarea
-                        placeholder="E.g., I need a modern gym website with membership plans, trainer profiles, class schedules, and a booking system. The design should be energetic and motivating with blue and orange colors..."
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        className="relative min-h-[200px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 resize-none text-lg focus-visible:ring-2 focus-visible:ring-blue-500"
-                        disabled={generating}
-                      />
-                    </div>
-                    <p className="text-sm text-gray-500 mt-3">
-                      Be as detailed as possible. Include business type, features needed, design preferences, and target audience.
-                    </p>
-                  </div>
-
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={generating || !prompt.trim()}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-6 text-lg"
-                  >
-                    {generating ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Generating Your Website...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-5 w-5" />
-                        Generate My Website
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Tips Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-12"
-            >
-              <h3 className="text-xl font-semibold mb-6 text-center">Tips for Better Results</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Example Prompts */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-3"
+              >
                 {[
-                  {
-                    title: 'Be Specific',
-                    description: 'Mention your business type, industry, and target audience'
-                  },
-                  {
-                    title: 'List Features',
-                    description: 'Describe what features and sections you want on your website'
-                  },
-                  {
-                    title: 'Design Style',
-                    description: 'Share your color preferences and design style (modern, elegant, bold, etc.)'
-                  }
-                ].map((tip, index) => (
-                  <Card key={index} className="bg-white/5 backdrop-blur-sm border-white/10">
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0 mt-1" />
-                        <div>
-                          <h4 className="font-semibold mb-1">{tip.title}</h4>
-                          <p className="text-sm text-gray-400">{tip.description}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Example Prompts */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="mt-12 mb-12"
-            >
-              <h3 className="text-xl font-semibold mb-6 text-center">Example Prompts</h3>
-              <div className="space-y-3">
-                {[
-                  'Create a luxury spa website with booking system, treatment menu, therapist profiles, and a serene design with soft pastels',
-                  'Build a restaurant website with online menu, table reservations, chef profiles, and food gallery with warm earthy tones',
-                  'Design a fitness center website with class schedules, trainer bios, membership plans, and an energetic modern look'
+                  { emoji: '🧘', text: 'A luxury spa with booking and treatment menu' },
+                  { emoji: '🍕', text: 'Restaurant with online menu and reservations' },
+                  { emoji: '💪', text: 'Fitness center with class schedules' },
+                  { emoji: '🏨', text: 'Hotel with room booking system' }
                 ].map((example, index) => (
                   <button
                     key={index}
-                    onClick={() => setPrompt(example)}
+                    onClick={() => setPrompt(example.text)}
                     disabled={generating}
-                    className="w-full text-left p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                    className="text-left p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 hover:border-zinc-300 rounded-xl transition-all group"
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-300 group-hover:text-white transition-colors">
-                        {example}
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{example.emoji}</span>
+                      <p className="text-sm text-zinc-600 group-hover:text-zinc-900 font-medium">
+                        {example.text}
                       </p>
-                      <ArrowRight className="h-4 w-4 text-gray-500 group-hover:text-white transition-colors" />
                     </div>
                   </button>
                 ))}
+              </motion.div>
+
+              {/* Tips */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-zinc-500 pt-6"
+              >
+                <span className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" /> No code needed
+                </span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" /> SEO optimized
+                </span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" /> Mobile responsive
+                </span>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Input Area - Fixed at Bottom */}
+          <div className="flex-shrink-0 border-t border-zinc-200 bg-white/80 backdrop-blur-xl">
+            <div className="px-6 py-4">
+              <div className="max-w-3xl mx-auto">
+                <div className="relative">
+                  <textarea
+                    placeholder="Describe your business in detail... (e.g., A modern fitness studio with class schedules, trainer profiles, and online booking)"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleGenerate();
+                      }
+                    }}
+                    className="w-full min-h-[80px] max-h-[200px] bg-white border-2 border-zinc-200 focus:border-orange-500 text-zinc-900 placeholder:text-zinc-400 resize-none text-base rounded-2xl px-5 py-4 pr-24 outline-none transition-all shadow-sm"
+                    disabled={generating}
+                  />
+                  <button
+                    onClick={handleGenerate}
+                    disabled={generating || !prompt.trim()}
+                    className={cn(
+                      "absolute right-3 bottom-3 px-5 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all flex items-center gap-2",
+                      generating || !prompt.trim()
+                        ? "bg-zinc-200 text-zinc-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-white hover:scale-105 shadow-orange-500/30"
+                    )}
+                  >
+                    {generating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Building...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Generate
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-zinc-400 mt-2 text-center">
+                  Press <kbd className="px-2 py-0.5 bg-zinc-100 rounded border border-zinc-200 font-mono">Enter</kbd> to generate or{' '}
+                  <kbd className="px-2 py-0.5 bg-zinc-100 rounded border border-zinc-200 font-mono">Shift + Enter</kbd> for new line
+                </p>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </>
   );

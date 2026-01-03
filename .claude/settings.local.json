@@ -5,7 +5,10 @@
       "Bash(do echo \"File: $file\")",
       "Bash(done)",
       "Bash(npm install framer-motion)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
